@@ -48,7 +48,6 @@ let phi1 x = cos x / (2.0 * (sin x))
 let phi2 x = log (2.0 - sqrt(1.0 + exp (2.0*x))) 
 let phi3 x = log x + 1.8
 
-iterations phi1 0.7
 
 let main = 
     printfn "%10.5f  %10.5f  %10.5f" (dichotomy f1 0.4 1) (iterations phi1 0.7)  (newthon f1 f1' 0.7)
