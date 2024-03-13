@@ -1,40 +1,42 @@
+let eps = 1e-6
+
 let fact = 
     let rec fact' acc = function
     | n when n = 1. -> acc
     | n -> fact' (acc*n) (n - 1.)
     fact' 1.
 
-
 let abs x = 
     if x >= 0. then x
     else -x
 
-let floatComp x y eps =
-    if abs(x - y) < eps then true
-    else false
-
-
 // General loop
-let while2 cur exitCond f x eps =
-    let rec while3 f acc cur i =
-        if exitCond cur (f cur x (i+1)) eps then (acc, i)
-        else while3 f (acc+cur) (f cur x (i+1)) (i+1)
-    while3 f 0. cur 1
+let rec while1 exitCond act cur =
+    if (exitCond cur) then cur
+    else while1 exitCond act (act cur)
 
-let taylor_naive x = 
-    let computeNextNaive u x n =
-        if n >= 1 then (pown (-1.0) (n - 1)) * (pown 2.0 (2*n - 1)) * (pown x (2*n)) / ( fact (2.0*float(n)) )
+let power (x: float) (n: int) =
+    let exitCondition (n, _, _) = n < 1
+    let action (n, x, acc) = (n - 1, x, acc * x)
+    let (_, _, res) = while1 exitCondition action (n, x, 1.)
+    res
+
+
+let taylor_naive x =
+    let computeNextNaive x n =
+        if n >= 1 then (power (-1.0) (n - 1)) * (power 2.0 (2*n - 1)) * (power x (2*n)) / ( fact (2.0*float(n)) )
         else 0.
-
-    while2 (computeNextNaive -1 x 1) floatComp computeNextNaive x 1e-7
-
+    let exitCondition (_, cur, x, i) = abs(cur - (computeNextNaive x (i+1))) < eps 
+    let action (acc, cur, x, i) = (acc + cur, (computeNextNaive x (i+1)), x, i+1)
+    while1 exitCondition action (0.0, 0.0, x, 0)
 
 let taylor x = 
     let computeNext u x n = 
         if n > 1 then (-1.)*(u * 4. * x * x) / (2. * float(n)) / (2. * float(n) - 1.)
         else (2. * x * x) / 2.
-
-    while2 (computeNext -1 x 1) floatComp computeNext x 1e-7
+    let exitCondition (acc, cur, x, i) = abs(cur - (computeNext cur x (i+1))) < eps 
+    let action (acc, cur, x, i) = (acc + cur, (computeNext cur x (i+1)), x, i+1)
+    while1 exitCondition action (0.0, 0.0, x, 0)
 
 
 // Task with built-in function
@@ -48,10 +50,7 @@ let main n =
     printfn "   x    Built-in      Naive iter     Smart iter"
     for i=0 to n do
         let x = a+(float i)/(float n)*(b-a)
-        let (u, v) = taylor_naive x
-        let (i, o) = taylor x
-        printfn "%5.2f  %10.6f  %10.6f %d   %10.6f %d" x (sinInPowerOfTwo x) u v i o
-// make sure to improve this table to include the required number of iterations
-// for each of the methods
-
+        let (val0, _, _, s0) = taylor_naive x
+        let (val1, _, _, s1) = taylor x
+        printfn "%5.2f  %10.6f  %10.6f %d   %10.6f %d" x (sinInPowerOfTwo x) val0 s0 val1 s1
 main n
